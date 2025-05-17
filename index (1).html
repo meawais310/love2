@@ -1,0 +1,308 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Love Card for Iqra</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: linear-gradient(135deg, #f9e1e6, #fff5f7);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Dancing Script', cursive;
+      color: #4a2c3e;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+    .heart-container {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+    }
+    .heart {
+      font-size: 100px;
+      color: #ff6f91;
+      animation: pulse 2s infinite;
+      display: none;
+    }
+    .name {
+      font-size: 60px;
+      color: #d43f6e;
+      opacity: 0;
+    }
+    .kiss {
+      position: absolute;
+      font-size: 30px;
+      opacity: 0;
+      z-index: 2;
+    }
+    .button {
+      background: #ff8fa3;
+      border: none;
+      padding: 15px 30px;
+      font-size: 24px;
+      color: white;
+      border-radius: 25px;
+      cursor: pointer;
+      margin-top: 20px;
+      display: none;
+      position: relative;
+      z-index: 3;
+      transition: transform 0.3s;
+    }
+    .button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(255, 111, 145, 0.5);
+    }
+    .card {
+      background: rgba(255, 245, 247, 0.9);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 0 30px rgba(255, 111, 145, 0.3);
+      max-width: 500px;
+      text-align: center;
+      opacity: 0;
+      position: relative;
+      z-index: 3;
+      display: none;
+    }
+    .card p {
+      font-size: 28px;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .floating-heart {
+      position: absolute;
+      font-size: 20px;
+      cursor: pointer;
+      opacity: 0;
+      z-index: 4;
+    }
+    .hidden-message {
+      position: absolute;
+      font-size: 18px;
+      color: #d43f6e;
+      opacity: 0;
+      z-index: 4;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing Script:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+  <canvas id="fireworks"></canvas>
+  <div class="heart-container">
+    <div class="heart">💖</div>
+    <div class="name">IQRA</div>
+    <button class="button">Click for more love... ummmah 💖</button>
+    <div class="card">
+      <p>
+        My Love, Meri Jaan...<br><br>
+        I love you more than words can say.<br>
+        You are my heart, my soul, my everything.<br><br>
+        Meri pali si shehzadi, you light up my world.<br>
+        Every moment with you is a dream come true.<br><br>
+        Ummmmah! 💋 Forever yours...
+      </p>
+    </div>
+  </div>
+  <audio id="bg-music" loop>
+    <source src="https://www.royaltyfree-music.com/samples/soft-piano.mp3" type="audio/mp3">
+  </audio>
+
+  <script>
+    // Fireworks Animation
+    const canvas = document.getElementById('fireworks');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = Math.random() * 5 + 2;
+        this.speedX = Math.random() * 6 - 3;
+        this.speedY = Math.random() * 6 - 3;
+        this.color = `hsl(${Math.random() * 60 + 300}, 70%, 70%)`;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.size *= 0.95;
+      }
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    let particles = [];
+    function createFirework() {
+      const x = canvas.width / 2;
+      const y = canvas.height / 2;
+      for (let i = 0; i < 50; i++) {
+        particles.push(new Particle(x, y));
+      }
+    }
+
+    function animateFireworks() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles = particles.filter(p => p.size > 0.5);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      if (particles.length > 0) {
+        requestAnimationFrame(animateFireworks);
+      }
+    }
+
+    // Kiss Animation
+    function createKisses() {
+      for (let i = 0; i < 10; i++) {
+        const kiss = document.createElement('div');
+        kiss.className = 'kiss';
+        kiss.innerHTML = '💋';
+        kiss.style.left = `${Math.random() * window.innerWidth}px`;
+        kiss.style.top = `${Math.random() * window.innerHeight}px`;
+        document.body.appendChild(kiss);
+        gsap.to(kiss, {
+          opacity: 1,
+          y: -100,
+          x: Math.random() * 200 - 100,
+          duration: 2,
+          delay: i * 0.2,
+          ease: 'power2.out',
+          onComplete: () => kiss.remove()
+        });
+      }
+    }
+
+    // Interactive Hearts
+    function createFloatingHearts() {
+      const messages = ["You're beautiful", "My forever", "I adore you"];
+      for (let i = 0; i < 5; i++) {
+        const heart = document.createElement('div');
+        heart.className = 'floating-heart';
+        heart.innerHTML = '❤️';
+        heart.style.left = `${Math.random() * (window.innerWidth - 50)}px`;
+        heart.style.top = `${Math.random() * (window.innerHeight - 50)}px`;
+        document.body.appendChild(heart);
+        gsap.to(heart, {
+          opacity: 1,
+          y: -50,
+          duration: 3,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+          delay: i * 0.5
+        });
+        heart.onclick = () => {
+          const msg = document.createElement('div');
+          msg.className = 'hidden-message';
+          msg.innerText = messages[Math.floor(Math.random() * messages.length)];
+          msg.style.left = heart.style.left;
+          msg.style.top = heart.style.top;
+          document.body.appendChild(msg);
+          gsap.to(msg, {
+            opacity: 1,
+            y: -50,
+            duration: 2,
+            ease: 'power2.out',
+            onComplete: () => msg.remove()
+          });
+          heart.remove();
+        };
+      }
+    }
+
+    // Animation Timeline
+    const tl = gsap.timeline({ onComplete: () => document.querySelector('.button').style.display = 'block' });
+    tl.add(() => {
+      createFirework();
+      animateFireworks();
+    }, 0)
+      .add(() => createKisses(), 2)
+      .to('.heart', { display: 'block', opacity: 1, duration: 1 }, 4)
+      .to('.heart', {
+        scale: 1.2,
+        duration: 0.5,
+        repeat: 1,
+        yoyo: true,
+        onComplete: () => {
+          gsap.to('.heart', { opacity: 0, duration: 0.5 });
+          gsap.to('.name', { opacity: 1, duration: 1, ease: 'power2.in' });
+        }
+      }, 5);
+
+    // Button Click
+    document.querySelector('.button').onclick = () => {
+      document.querySelector('.button').style.display = 'none';
+      document.querySelector('.card').style.display = 'block';
+      gsap.to('.card', { opacity: 1, y: -20, duration: 1, ease: 'power2.out' });
+      createFloatingHearts();
+      document.getElementById('bg-music').play().catch(() => {});
+    };
+
+    // Play music (optional, may require user interaction)
+    window.onload = () => {
+      document.getElementById('bg-music').volume = 0.3;
+    };
+  </script>
+</body>
+</html>
